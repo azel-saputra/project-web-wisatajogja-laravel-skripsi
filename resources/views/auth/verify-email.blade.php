@@ -1,4 +1,5 @@
 <x-guest-layout>
+    <!--update-->
     <x-auth-card>
         <x-slot name="logo">
             <a href="/">

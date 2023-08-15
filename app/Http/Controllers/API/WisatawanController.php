@@ -13,9 +13,13 @@ class WisatawanController extends Controller
 {
     public function login(Request $request)
     {
-        $user = Wisatawan::where('email', $request->email)->first();
+        $user = Wisatawan::where(function($query) use ($request) {
+            $query->where('email', $request->email)
+                  ->orWhere('name', $request->name);
+        })->first();
+    
         if ($user) {
-            if (password_verify($request->password, $user->password)) {
+            if (password_verify($request->input('password'), $user->password)) {
                 Session::put('user', $user);
                 Session::save();
                 return response()->json([
@@ -26,20 +30,43 @@ class WisatawanController extends Controller
             }
             return $this->error('Password salah');
         }
-        return $this->error('Email tidak terdaftar');
+        return $this->error('Email atau nama tidak terdaftar');
     }
+    // {
+    //     $user = Wisatawan::where('email', $request->email)->first();
+    //     if ($user) {
+    //         if (password_verify($request->password, $user->password)) {
+    //             Session::put('user', $user);
+    //             Session::save();
+    //             return response()->json([
+    //                 'success' => 1,
+    //                 'message' => 'Selamat Datang ' . $user->name,
+    //                 'user' => $user
+    //             ]);
+    //         }
+    //         return $this->error('Password salah');
+    //     }
+    //     return $this->error('Email tidak terdaftar');
+    // }
 
     public function register(Request $request)
     {
         $validasi = Validator::make($request->all(), [
-            'name' => 'required',
+            'name' => 'required|unique:wisatawans,name',
             'email' => 'required|email|unique:wisatawans',
             'password' => 'required|min:6',
         ]);
 
         if ($validasi->fails()) {
-            $val = $validasi->errors()->all();
-            return $this->error($val[0]);
+            $errors = $validasi->errors();
+            
+            if ($errors->has('name')) {
+                return $this->error('Nama sudah terdaftar.');
+            } elseif ($errors->has('email')) {
+                return $this->error('Email sudah terdaftar.');
+            }
+            
+            return $this->error('Ada kesalahan dalam pendaftaran.');
         }
 
         $user = Wisatawan::create(array_merge($request->all(), [

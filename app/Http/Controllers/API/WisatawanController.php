@@ -75,6 +75,7 @@ class WisatawanController extends Controller
 
         if ($user) {
             Session::put('user', $user);
+            Session::save();
             return response()->json([
                 'success' => 1,
                 'message' => 'Selamat register berhasil',
